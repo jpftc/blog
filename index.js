@@ -37,9 +37,37 @@ connection
 app.use("/", categoriesController);
 app.use("/", articlesController);
 
-// Criando rota padrão
+// Criando rota padrão consultando artigos e ordenando por ID
 app.get("/", (req, res) => {
-    res.render("index")
+    Article.findAll({
+        order: [
+            ["id", "DESC"]
+        ]
+    }).then(articles => {
+        Category.findAll().then(categories => {
+            res.render("index", { articles: articles, categories: categories });
+        });
+    });
+});
+
+// Rota para acessar artigos consultando pelo slug
+app.get("/:slug", (req, res) => {
+    var slug = req.params.slug;
+    Article.findOne({
+        where: {
+            slug: slug
+        }
+    }).then(article => {
+        if (article != undefined) {
+            Category.findAll().then(categories => {
+                res.render("article", { article: article, categories: categories });
+            });
+        } else {
+            res.redirect("/");
+        }
+    }).catch(err => {
+        res.redirect("/");
+    });
 });
 
 // Definindo porta que a aplicação escutará

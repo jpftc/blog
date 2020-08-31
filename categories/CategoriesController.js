@@ -6,6 +6,7 @@ const router = express.Router();
 const Category = require("./Category");
 // Carregando Slugify (transforma strings em "slugs")
 const slugify = require("slugify");
+const Categoty = require("./Category");
 
 // Criando rotas com Router
 router.get("/admin/categories/new", (req, res) => {
@@ -21,7 +22,7 @@ router.post("/categories/save", (req, res) => {
             title: title,
             slug: slugify(title)
         }).then(() => {
-            res.redirect("/");
+            res.redirect("/admin/categories");
         });
 
     } else {
@@ -29,8 +30,65 @@ router.post("/categories/save", (req, res) => {
     }
 });
 
+// Consulta na tabela de categorias e envia para o frontend
 router.get("/admin/categories", (req, res) => {
-    res.render("admin/categories/index");
+    Categoty.findAll().then(categories => {
+        res.render("admin/categories/index", { categories: categories });
+    });
+});
+
+
+// Rota para deletar uma categoria
+router.post("/categories/delete", (req, res) => {
+    var id = req.body.id;
+    if (id != undefined) {
+        if (!isNaN(id)) {
+            
+            Category.destroy({
+                where: {
+                    id: id
+                }
+            }).then(() => {
+                res.redirect("/admin/categories");
+            });
+
+        } else {
+            res.redirect("/admin/categories");
+        }
+    } else {
+        res.redirect("/admin/categories");
+    }
+});
+
+// Rota para editar a categoria (realiza consulta no banco de dados pelo ID)
+router.get("/admin/categories/edit/:id", (req, res) => {
+    var id = req.params.id;
+    if(isNaN(id)) {
+        res.redirect("/admin/categories");
+    }
+    Category.findByPk(id).then(category => {
+        if (category != undefined) {
+            res.render("admin/categories/edit", {category: category});
+        } else {
+            res.redirect("/admin/categories");
+        }
+    }).catch(erro => {
+        res.redirect("/admin/categories");
+    });
+});
+
+// Atualizando dados no banco de dados (obs: req.body pega dados via form)
+router.post("/categories/update", (req, res) => {
+    var id = req.body.id;
+    var title = req.body.title;
+
+    Category.update({title: title, slug: slugify(title)}, {
+        where: {
+            id: id
+        }
+    }).then(() => {
+        res.redirect("/admin/categories");
+    });
 });
 
 // Exportando rotas
